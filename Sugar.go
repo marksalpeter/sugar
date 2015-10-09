@@ -28,15 +28,15 @@ func New (t *testing.T) Sugar {
 // writes a failure message, and marks the test as a failure if isPassed() returns false, but continues execution of the test
 func (s *sugar) Assert(name string, isPassed Test) Sugar {
 	startTime := time.Now()
-	l := &logger{}
-	if isPassed(l.log) {
+	l := NewLogger()
+	if isPassed(l.Log) {
 		if testing.Verbose() {
 			fmt.Printf("%s	%20s	%s\n", greenColor("PASS"), cyanColor(time.Now().Sub(startTime)), name)
-			l.print()
+			fmt.Print(l)
 		}
 	} else {
 		fmt.Printf("%s	%20s	%s\n", redColor("FAIL"), cyanColor(time.Now().Sub(startTime)), name)
-		l.print()
+		fmt.Print(l)
 		if s.t != nil {
 			s.t.Fail()
 		} else {
@@ -49,15 +49,15 @@ func (s *sugar) Assert(name string, isPassed Test) Sugar {
 // writes a warning message if isPassed() returns false, but continues execution of the test and does not mark it as having failed
 func (s *sugar) Warn(name string, isPassed Test) Sugar {
 	startTime := time.Now()
-	l := &logger{}
-	if isPassed(l.log) {
+	l := NewLogger()
+	if isPassed(l.Log) {
 		if testing.Verbose() {
 			fmt.Printf("%s	%20s	%s\n", greenColor("PASS"), cyanColor(time.Now().Sub(startTime)), name)
-			l.print()
+			fmt.Print(l)
 		}
 	} else {
 		fmt.Printf("%s	%20s	%s\n", yellowColor("WARN"), cyanColor(time.Now().Sub(startTime)), name)
-		l.print()
+		fmt.Print(l)
 	}
 	return s
 }
@@ -65,15 +65,15 @@ func (s *sugar) Warn(name string, isPassed Test) Sugar {
 // writes a warning message and fails the test immediatel if isPassed() returns false. the test will not continue to execute
 func (s *sugar) Must(name string, isPassed Test) Sugar {
 	startTime := time.Now()
-	l := &logger{}
-	if isPassed(l.log) {
+	l := NewLogger()
+	if isPassed(l.Log) {
 		if testing.Verbose() {
 			fmt.Printf("%s	%20s	%s\n", greenColor("PASS"), cyanColor(time.Now().Sub(startTime)), name)
-			l.print()
+			fmt.Print(l)
 		}
 	} else {
 		fmt.Printf("%s	%20s	%s\n", redColor("FATAL"), cyanColor(time.Now().Sub(startTime)), name)
-		l.print()
+		fmt.Print(l)
 		if s.t != nil {	
 			s.t.FailNow()
 		} else {
@@ -85,6 +85,8 @@ func (s *sugar) Must(name string, isPassed Test) Sugar {
 
 // draws a colorized heading
 func (s *sugar) Title(title string) Sugar {
-	fmt.Printf("\n%20s\n", grayUnderlineColor(">>> " + title + " <<<"))
+	if testing.Verbose() {
+		fmt.Printf("\n%20s\n", grayUnderlineColor(">>> " + title + " <<<"))
+	}
 	return s
 }
