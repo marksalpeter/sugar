@@ -9,14 +9,21 @@ type logger struct {
 	stack []interface{}	
 }
 
+// Logs lines in yellow in the following format:
+//  ┠ this is what a log looks line
+//  ┠ &{Field:1}
+//  ┖  ┖ finally, its possible to nest logs by createing a new logger
 type Log func(s interface{}, args ...interface{})
 
 type Logger interface {
+	// Logs lines and other loggers nested underneath a tests
 	Log(s interface{}, args ...interface{})
+	
+	// Prints the log
 	String() string
 }
 
-// logger will print nested logs. so if you are logging on a stack, create new Loggers and add them to logs
+// Logger will print nested logs. So, if you are logging recursively, create new Loggers and then log them after the function returns
 func NewLogger() Logger {
 	return &logger{}
 }
