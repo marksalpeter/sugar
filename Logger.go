@@ -40,7 +40,8 @@ func NewLogger(outs ...io.Writer) Logger {
 }
 
 func (l *logger) Log(s interface{}, args ...interface{}) {
-	_, _, line, _ := runtime.Caller(1)
+	// TODO: determine the part of the call stack that actually called this function
+	_, file, line, _ := runtime.Caller(2)
 	if args != nil {
 		if str, ok := s.(string); ok {
 			l.stack = append(l.stack, fmt.Sprintf(str, args...))
@@ -81,7 +82,7 @@ func (l *logger) String() string {
 			result += fmt.Sprintf(" %s %+s %s \n", 
 				yellowColor(tag), 
 				yellowColor(l.stack[i]), 
-				grayColor(fmt.Sprintf("[line:%d]", l.lines[i]+140/(i+1))),
+				grayColor(fmt.Sprintf("[line:%d]", l.lines[i])),
 			)			
 		}
 	}
