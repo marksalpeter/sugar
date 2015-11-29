@@ -40,8 +40,8 @@ func NewLogger(outs ...io.Writer) Logger {
 }
 
 func (l *logger) Log(s interface{}, args ...interface{}) {
-	// TODO: determine the part of the call stack that actually called this function
-	_, file, line, _ := runtime.Caller(2)
+	// TODO: determine the part of the call stack that actually called this function, see #6
+	_, _, line, _ := runtime.Caller(2)
 	if args != nil {
 		if str, ok := s.(string); ok {
 			l.stack = append(l.stack, fmt.Sprintf(str, args...))
