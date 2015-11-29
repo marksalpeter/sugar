@@ -10,6 +10,7 @@ var (
 	yellow = ansi.ColorCode("yellow")
 	red = ansi.ColorCode("red")
 	cyan = ansi.ColorCode("cyan")
+	gray= ansi.LightBlack
 	grayUnderline = ansi.ColorCode("180+u")
 	reset = ansi.ColorCode("reset")
 )
@@ -28,6 +29,10 @@ func yellowColor(input interface{}) string {
 
 func cyanColor(input interface{}) string {
 	return fmt.Sprintf("%s%+v%s", cyan, input, reset)
+}
+
+func grayColor(input interface{}) string {
+	return fmt.Sprintf("%s%+v%s", gray, input, reset)
 }
 
 func grayUnderlineColor(input interface{}) string {

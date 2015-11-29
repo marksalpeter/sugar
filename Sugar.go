@@ -86,6 +86,10 @@
 //  	})
 //  }
 //
+// How to use sugar in the MainTest func
+//
+//  func TestMain
+//
 // Author: Mark Salpeter
 //
 package sugar
@@ -95,6 +99,7 @@ import (
 	"time"
 	"testing"
 	"os"
+	"io"
 )
 
 type Sugar interface {
@@ -116,12 +121,21 @@ type Sugar interface {
 type Test func (Log) bool
 
 type sugar struct {
-	t *testing.T
+	t   *testing.T
+	out io.Writer
 }
 
-// If no testing.T is initialized, the test will just call os.Exit(0). This can be handy for TestMain functions
-func New (t *testing.T) Sugar {
-	return &sugar{ t: t }
+// creates a new sugar interface
+// t is manditory 
+// you can optionally pass outputs other than os.Stdout
+func New (t *testing.T, outs ...io.Writer) Sugar {
+	if t == nil {
+		panic("t is <nil>")
+	} else if outs != nil  {
+		return &sugar{ t: t,  out: io.MultiWriter(outs...) }		
+	} else {
+		return &sugar{ t: t,  out: os.Stdout }		
+	}
 }
 
 // writes a failure message, and marks the test as a failure if isPassed() returns false, but continues execution of the test
@@ -130,12 +144,12 @@ func (s *sugar) Assert(name string, isPassed Test) Sugar {
 	l := NewLogger()
 	if isPassed(l.Log) {
 		if testing.Verbose() {
-			fmt.Printf("%s	%20s	%s\n", greenColor("PASS"), cyanColor(time.Now().Sub(startTime)), name)
-			fmt.Print(l)
+			fmt.Fprintf(s.out, "%s	%20s	%s\n", greenColor("PASS"), cyanColor(time.Now().Sub(startTime)), name)
+			fmt.Fprint(s.out,l)
 		}
 	} else {
-		fmt.Printf("%s	%20s	%s\n", redColor("FAIL"), cyanColor(time.Now().Sub(startTime)), name)
-		fmt.Print(l)
+		fmt.Fprintf(s.out,"%s	%20s	%s\n", redColor("FAIL"), cyanColor(time.Now().Sub(startTime)), name)
+		fmt.Fprint(s.out,l)
 		if s.t != nil {
 			s.t.Fail()
 		} else {
@@ -151,12 +165,12 @@ func (s *sugar) Warn(name string, isPassed Test) Sugar {
 	l := NewLogger()
 	if isPassed(l.Log) {
 		if testing.Verbose() {
-			fmt.Printf("%s	%20s	%s\n", greenColor("PASS"), cyanColor(time.Now().Sub(startTime)), name)
-			fmt.Print(l)
+			fmt.Fprintf(s.out,"%s	%20s	%s\n", greenColor("PASS"), cyanColor(time.Now().Sub(startTime)), name)
+			fmt.Fprint(s.out,l)
 		}
 	} else {
-		fmt.Printf("%s	%20s	%s\n", yellowColor("WARN"), cyanColor(time.Now().Sub(startTime)), name)
-		fmt.Print(l)
+		fmt.Fprintf(s.out,"%s	%20s	%s\n", yellowColor("WARN"), cyanColor(time.Now().Sub(startTime)), name)
+		fmt.Fprint(s.out,l)
 	}
 	return s
 }
@@ -167,12 +181,12 @@ func (s *sugar) Must(name string, isPassed Test) Sugar {
 	l := NewLogger()
 	if isPassed(l.Log) {
 		if testing.Verbose() {
-			fmt.Printf("%s	%20s	%s\n", greenColor("PASS"), cyanColor(time.Now().Sub(startTime)), name)
-			fmt.Print(l)
+			fmt.Fprintf(s.out,"%s	%20s	%s\n", greenColor("PASS"), cyanColor(time.Now().Sub(startTime)), name)
+			fmt.Fprint(s.out,l)
 		}
 	} else {
-		fmt.Printf("%s	%20s	%s\n", redColor("FATAL"), cyanColor(time.Now().Sub(startTime)), name)
-		fmt.Print(l)
+		fmt.Fprintf(s.out,"%s	%20s	%s\n", redColor("FATAL"), cyanColor(time.Now().Sub(startTime)), name)
+		fmt.Fprint(s.out,l)
 		if s.t != nil {	
 			s.t.FailNow()
 		} else {
@@ -185,7 +199,7 @@ func (s *sugar) Must(name string, isPassed Test) Sugar {
 // draws a colorized heading
 func (s *sugar) Title(title string) Sugar {
 	if testing.Verbose() {
-		fmt.Printf("\n%20s\n", grayUnderlineColor(">>> " + title + " <<<"))
+		fmt.Fprintf(s.out,"========= %s =========\n", title)
 	}
 	return s
 }

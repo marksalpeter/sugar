@@ -3,10 +3,15 @@ package sugar
 import (
 	"fmt"
 	"strings"
+	"io"
+	"os"
+	"runtime"
 )
 
 type logger struct {
 	stack []interface{}	
+	lines []int
+	out io.Writer
 }
 
 // Logs lines in yellow in the following format:
@@ -23,21 +28,34 @@ type Logger interface {
 	String() string
 }
 
-// Logger will print nested logs. So, if you are logging recursively, create new Loggers and then log them after the function returns
-func NewLogger() Logger {
-	return &logger{}
+// Logger will print nested logs. So, if you are logging recursively, create new Loggers and then log them after the function returns.
+// You can optionally pass in different writers to be used to write the output of the writer.
+// the default output is io.Stdout
+func NewLogger(outs ...io.Writer) Logger {
+	if outs != nil {
+		return  &logger{ out : io.MultiWriter(outs...) }
+	} else {
+		return &logger{ out : os.Stdout }		
+	}
 }
 
 func (l *logger) Log(s interface{}, args ...interface{}) {
+	_, _, line, _ := runtime.Caller(1)
 	if args != nil {
 		if str, ok := s.(string); ok {
-			l.stack = append(l.stack, fmt.Sprintf(str, args...))	
+			l.stack = append(l.stack, fmt.Sprintf(str, args...))
+			l.lines = append(l.lines, line)
 		} else {
 			l.stack = append(l.stack, s)
-			l.stack = append(l.stack, args...)	
+			l.lines = append(l.lines, line)
+			for _, arg := range args {
+				l.stack = append(l.stack, arg)	
+				l.lines = append(l.lines, line)
+			}
 		}
 	} else if s != nil {
 		l.stack = append(l.stack, s)
+		l.lines = append(l.lines, line)
 	}
 }
 
@@ -60,7 +78,11 @@ func (l *logger) String() string {
 				} 
 			}
 		} else {
-			result += fmt.Sprintf(" %s %+s \n", yellowColor(tag), yellowColor(l.stack[i]))			
+			result += fmt.Sprintf(" %s %+s %s \n", 
+				yellowColor(tag), 
+				yellowColor(l.stack[i]), 
+				grayColor(fmt.Sprintf("[line:%d]", l.lines[i]+140/(i+1))),
+			)			
 		}
 	}
 	return result
