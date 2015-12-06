@@ -86,9 +86,27 @@
 //  	})
 //  }
 //
-// How to use sugar in the MainTest func
+//  How to use sugar in the MainTest func
 //
-//  func TestMain
+//  func TestMain (m *testing.M) {
+//  	
+//  	// nil signifies that we're in the `TestMain` func
+//  	s := sugar.New(nil)
+//  	
+//  	s.Assert("tests will continue to execute", func (log sugar.Log) bool {
+//  		log("but s.Failed() == true")
+//  		return false
+//  	}).
+//  	
+//  	Must("this will fail and prevent subsequent tests from running", func (log sugar.Log) bool {
+//  		log("this should be the last sentence being logged")
+//  		return false
+//  	}).
+//  	
+//  	Warn("this will never be reached", func (_ sugar.Log) bool {
+//  		return true
+//  	})
+//  }
 //
 // Author: Mark Salpeter
 //
@@ -100,6 +118,7 @@ import (
 	"testing"
 	"os"
 	"io"
+	"flag"
 )
 
 type Sugar interface {
@@ -114,6 +133,9 @@ type Sugar interface {
 	
 	// Prints a title on the screen to delinate between groups of tests
 	Title(string) Sugar
+	
+	// Returns true if any of the tests failed
+	isFailed() bool
 }
 
 // Tests are the basis for all testing with sugar. If a test returns false, that means that it failed. 
@@ -121,21 +143,39 @@ type Sugar interface {
 type Test func (Log) bool
 
 type sugar struct {
-	t   *testing.T
-	out io.Writer
+	t          *testing.T
+	out        io.Writer
+	isTestMain bool
 }
 
 // creates a new sugar interface
-// t is manditory 
+// if t is nil it assumes we're in the `TestMain` func
 // you can optionally pass outputs other than os.Stdout
 func New (t *testing.T, outs ...io.Writer) Sugar {
-	if t == nil {
-		panic("t is <nil>")
-	} else if outs != nil  {
-		return &sugar{ t: t,  out: io.MultiWriter(outs...) }		
-	} else {
-		return &sugar{ t: t,  out: os.Stdout }		
+	
+	var s sugar
+	
+	// if we haven't parsed flags yet, make sure they're parsed so we can catpure the "verbose" option correctly
+	if !flag.Parsed() {
+		flag.Parse()
 	}
+	
+	// assume we're in TestMain if a testing.T isn't passed in
+	if t == nil {
+		s.t          = &testing.T{}
+		s.isTestMain = true	
+	} else {
+		s.t = t
+	} 
+	
+	// add the passed in outs or the std out 
+	if outs != nil {
+		s.out = io.MultiWriter(outs...)		
+	} else {
+		s.out = os.Stdout
+	}
+	
+	return &s
 }
 
 // writes a failure message, and marks the test as a failure if isPassed() returns false, but continues execution of the test
@@ -150,11 +190,7 @@ func (s *sugar) Assert(name string, isPassed Test) Sugar {
 	} else {
 		fmt.Fprintf(s.out,"%s	%20s	%s\n", redColor("FAIL"), cyanColor(time.Now().Sub(startTime)), name)
 		fmt.Fprint(s.out,l)
-		if s.t != nil {
-			s.t.Fail()
-		} else {
-			os.Exit(0)
-		}
+		s.t.Fail()
 	}
 	return s
 }
@@ -187,9 +223,10 @@ func (s *sugar) Must(name string, isPassed Test) Sugar {
 	} else {
 		fmt.Fprintf(s.out,"%s	%20s	%s\n", redColor("FATAL"), cyanColor(time.Now().Sub(startTime)), name)
 		fmt.Fprint(s.out,l)
-		if s.t != nil {	
+		if !s.isTestMain {	
 			s.t.FailNow()
 		} else {
+			s.t.Fail()
 			os.Exit(0)
 		}
 	}
@@ -199,7 +236,12 @@ func (s *sugar) Must(name string, isPassed Test) Sugar {
 // draws a colorized heading
 func (s *sugar) Title(title string) Sugar {
 	if testing.Verbose() {
-		fmt.Fprintf(s.out,"========= %s =========\n", title)
+		fmt.Fprintf(s.out,"==== %s ====\n", title)
 	}
 	return s
+}
+
+// returns true if any of the tests failed
+func (s *sugar) isFailed() bool {
+	return s.t.Failed()
 }

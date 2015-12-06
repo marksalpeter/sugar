@@ -3,6 +3,7 @@ package sugar_test
 import (
 	"testing"
 	"github.com/marksalpeter/sugar"
+	"fmt"
 )
 
 type Struct struct {
@@ -11,7 +12,10 @@ type Struct struct {
 
 func Example() {
 	
-	sugar.New(&testing.T{}).
+	// be sure to use the *testing.T you get from the `Test(t *testing.T)` func
+	t := &testing.T{}
+	
+	sugar.New(t).
 
 	Must("this must be true or t.FailNow() will be called", func (_ sugar.Log) bool {
 		return true
@@ -38,7 +42,7 @@ func Example() {
 				
 		return true
 	})
-	
+
 	// Output: 
 	// PASS	    5.042µs	this must be true or t.FailNow() will be called
 	// PASS	    1.111µs	this won't cause a failure, it just prints a warning
@@ -55,9 +59,11 @@ func Example() {
 
 func ExampleSugar() {
 	
-	sugar.New(&testing.T{}).
+	// pass in nil when you're in `MainTest`, otherwise make sure
+	// to pass in the `*testing.T` passed into the test
+	s := sugar.New(nil)
 
-	Title("welcome to the sugar example").
+	s.Title("welcome to the sugar example").
 	
 	Must("this must be true or t.FailNow() will be called", func (_ sugar.Log) bool {
 		return true
@@ -71,11 +77,17 @@ func ExampleSugar() {
 		return false
 	})
 	
+	if s.Failed() {
+		fmt.Log("the tests failed :/")
+	}
+
 	// Output:
-	// >>> welcome to the sugar example <<<
+	// ==== welcome to the sugar example ====
 	// PASS	    1.231µs	this must be true or t.FailNow() will be called
 	// FAIL	    1.078µs	this must be true or t.Fail() will be called!
 	// WARN	    1.005µs	this won't cause a failure, it just prints a warning
+	// the tests failed :/
+	
 }
 
 func ExampleLogger() {
