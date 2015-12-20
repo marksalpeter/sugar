@@ -1,6 +1,6 @@
 Sugar is meant to simplify test output and and better organize test in syntax in go. For full documentation see the godoc link below.
 
-[![GoDoc](https://godoc.org/github.com/golang/gddo?status.svg)](http://godoc.org/github.com/golang/gddo)
+[![GoDoc](https://godoc.org/github.com/golang/gddo?status.svg)](http://godoc.org/github.com/marksalpeter/sugar)
 
 ### Why do I need this?
 With sugar, your test output will look sexy, like this ;) :
