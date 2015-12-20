@@ -139,7 +139,7 @@ type Sugar interface {
 	Title(string) Sugar
 
 	// Returns true if any of the tests failed
-	isFailed() bool
+	IsFailed() bool
 }
 
 // Test is the basis for all testing with sugar. If a test returns false, that means that it failed.
@@ -247,7 +247,7 @@ func (s *sugar) Title(title string) Sugar {
 }
 
 // returns true if any of the tests failed
-func (s *sugar) isFailed() bool {
+func (s *sugar) IsFailed() bool {
 	return s.t.Failed()
 }
 
