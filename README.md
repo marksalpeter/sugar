@@ -3,7 +3,7 @@ Sugar is meant to simplify test output and and better organize test in syntax in
 
 ### Why do I need this?
 With sugar, your test output will look sexy, like this ;) :
-[![terminal](https://github.com/marksalpeter/sugar/terminal.png)]
+![terminal](terminal.png?raw=true)
 
 and test code will be organized more clearly like this:
 ```go
