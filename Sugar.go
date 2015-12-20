@@ -1,5 +1,6 @@
+// Package sugar ...
 //
-// Sugar is a wrapper around testing.T that makes tests more beautiful and readible in the terminal, and more elegant 
+// Sugar is a wrapper around testing.T that makes tests more beautiful and readible in the terminal, and more elegant
 // and syntactically clear in your test files.
 //
 // Terminal Improvements
@@ -40,12 +41,12 @@
 //   ┠ &{Field:3}
 //   ┖  ┖ finally, its possible to nest logs by createing a new logger
 //  --- FAIL: TestSugar (0.00s)
-// 
+//
 // Test Improvements
-// 
+//
 // Tests in go can sometimes feel disjointed or hard to read. It can also sometimes be very tempting to test more than one thing
-// within a single test function. Without sugar, this becomes unmanagable, quickly. Sugar addresses this problem by orgainizing 
-// your tests in functions labeled by plain english descriptions of what they are trying to accomplish. 
+// within a single test function. Without sugar, this becomes unmanagable, quickly. Sugar addresses this problem by orgainizing
+// your tests in functions labeled by plain english descriptions of what they are trying to accomplish.
 //
 // Example
 //
@@ -62,7 +63,7 @@
 //  		t.Fatal("model.OtherField != that")
 //  	}
 //  }
-// 
+//
 // Although a comprable test with sugar is slightly more verbose, it has greater code clarity and maintainability:
 //  func TestModelWithSugar(t *testing.T) {
 //  	var model Model
@@ -89,20 +90,20 @@
 //  How to use sugar in the MainTest func
 //
 //  func TestMain (m *testing.M) {
-//  	
+//
 //  	// nil signifies that we're in the `TestMain` func
 //  	s := sugar.New(nil)
-//  	
+//
 //  	s.Assert("tests will continue to execute", func (log sugar.Log) bool {
 //  		log("but s.Failed() == true")
 //  		return false
 //  	}).
-//  	
+//
 //  	Must("this will fail and prevent subsequent tests from running", func (log sugar.Log) bool {
 //  		log("this should be the last sentence being logged")
 //  		return false
 //  	}).
-//  	
+//
 //  	Warn("this will never be reached", func (_ sugar.Log) bool {
 //  		return true
 //  	})
@@ -113,68 +114,72 @@
 package sugar
 
 import (
-	"fmt"
-	"time"
-	"testing"
-	"os"
-	"io"
 	"flag"
+	"fmt"
+	"io"
+	"os"
+	"runtime/debug"
+	"testing"
+	"time"
 )
 
+// Sugar is a wrapper around testing.T that makes tests more beautiful and readible in the terminal, and more elegant
+// and syntactically clear in your test files.
 type Sugar interface {
 	// Flags a test as failed but the test continues execution
 	Assert(string, Test) Sugar
-	
+
 	// Warns that something is wrong but the test will pass
 	Warn(string, Test) Sugar
-	
+
 	// Flags a test as failed and prevents subsequent tests from running
 	Must(string, Test) Sugar
-	
+
 	// Prints a title on the screen to delinate between groups of tests
 	Title(string) Sugar
-	
+
 	// Returns true if any of the tests failed
 	isFailed() bool
 }
 
-// Tests are the basis for all testing with sugar. If a test returns false, that means that it failed. 
+// Test is the basis for all testing with sugar. If a test returns false, that means that it failed.
 // If a test returns true that means that it passed.
-type Test func (Log) bool
+type Test func(Log) bool
 
 type sugar struct {
 	t          *testing.T
 	out        io.Writer
 	isTestMain bool
+	title      string
 }
 
-// creates a new sugar interface
+// New creates a new sugar interface
 // if t is nil it assumes we're in the `TestMain` func
 // you can optionally pass outputs other than os.Stdout
-func New (t *testing.T, outs ...io.Writer) Sugar {
-	
+func New(t *testing.T, outs ...io.Writer) Sugar {
+
 	var s sugar
-	
+
 	// if we haven't parsed flags yet, make sure they're parsed so we can catpure the "verbose" option correctly
 	if !flag.Parsed() {
 		flag.Parse()
 	}
-	
+
 	// assume we're in TestMain if a testing.T isn't passed in
 	if t == nil {
-		s.t          = &testing.T{}
-		s.isTestMain = true	
+		s.t = &testing.T{}
+		s.isTestMain = true
 	} else {
 		s.t = t
-	} 
-	
-	// add the passed in outs or the std out 
+	}
+
+	// add the passed in outs or the std out
 	if outs != nil {
-		s.out = io.MultiWriter(outs...)		
+		s.out = io.MultiWriter(outs...)
 	} else {
 		s.out = os.Stdout
 	}
-	
+
 	return &s
 }
 
@@ -182,14 +187,14 @@ func New (t *testing.T, outs ...io.Writer) Sugar {
 func (s *sugar) Assert(name string, isPassed Test) Sugar {
 	startTime := time.Now()
 	l := NewLogger()
-	if isPassed(l.Log) {
+	if <-recoverFromPanic(isPassed, l.Log) {
 		if testing.Verbose() {
 			fmt.Fprintf(s.out, "%s	%20s	%s\n", greenColor("PASS"), cyanColor(time.Now().Sub(startTime)), name)
-			fmt.Fprint(s.out,l)
+			fmt.Fprint(s.out, l)
 		}
 	} else {
-		fmt.Fprintf(s.out,"%s	%20s	%s\n", redColor("FAIL"), cyanColor(time.Now().Sub(startTime)), name)
-		fmt.Fprint(s.out,l)
+		fmt.Fprintf(s.out, "%s	%20s	%s\n", redColor("FAIL"), cyanColor(time.Now().Sub(startTime)), name)
+		fmt.Fprint(s.out, l)
 		s.t.Fail()
 	}
 	return s
@@ -199,14 +204,14 @@ func (s *sugar) Assert(name string, isPassed Test) Sugar {
 func (s *sugar) Warn(name string, isPassed Test) Sugar {
 	startTime := time.Now()
 	l := NewLogger()
-	if isPassed(l.Log) {
+	if <-recoverFromPanic(isPassed, l.Log) {
 		if testing.Verbose() {
-			fmt.Fprintf(s.out,"%s	%20s	%s\n", greenColor("PASS"), cyanColor(time.Now().Sub(startTime)), name)
-			fmt.Fprint(s.out,l)
+			fmt.Fprintf(s.out, "%s	%20s	%s\n", greenColor("PASS"), cyanColor(time.Now().Sub(startTime)), name)
+			fmt.Fprint(s.out, l)
 		}
 	} else {
-		fmt.Fprintf(s.out,"%s	%20s	%s\n", yellowColor("WARN"), cyanColor(time.Now().Sub(startTime)), name)
-		fmt.Fprint(s.out,l)
+		fmt.Fprintf(s.out, "%s	%20s	%s\n", yellowColor("WARN"), cyanColor(time.Now().Sub(startTime)), name)
+		fmt.Fprint(s.out, l)
 	}
 	return s
 }
@@ -215,15 +220,15 @@ func (s *sugar) Warn(name string, isPassed Test) Sugar {
 func (s *sugar) Must(name string, isPassed Test) Sugar {
 	startTime := time.Now()
 	l := NewLogger()
-	if isPassed(l.Log) {
+	if <-recoverFromPanic(isPassed, l.Log) {
 		if testing.Verbose() {
-			fmt.Fprintf(s.out,"%s	%20s	%s\n", greenColor("PASS"), cyanColor(time.Now().Sub(startTime)), name)
-			fmt.Fprint(s.out,l)
+			fmt.Fprintf(s.out, "%s	%20s	%s\n", greenColor("PASS"), cyanColor(time.Now().Sub(startTime)), name)
+			fmt.Fprint(s.out, l)
 		}
 	} else {
-		fmt.Fprintf(s.out,"%s	%20s	%s\n", redColor("FATAL"), cyanColor(time.Now().Sub(startTime)), name)
-		fmt.Fprint(s.out,l)
-		if !s.isTestMain {	
+		fmt.Fprintf(s.out, "%s	%20s	%s\n", redColor("FATAL"), cyanColor(time.Now().Sub(startTime)), name)
+		fmt.Fprint(s.out, l)
+		if !s.isTestMain {
 			s.t.FailNow()
 		} else {
 			s.t.Fail()
@@ -236,7 +241,7 @@ func (s *sugar) Must(name string, isPassed Test) Sugar {
 // draws a colorized heading
 func (s *sugar) Title(title string) Sugar {
 	if testing.Verbose() {
-		fmt.Fprintf(s.out,"==== %s ====\n", title)
+		fmt.Fprintf(s.out, "==== %s ====\n", title)
 	}
 	return s
 }
@@ -244,4 +249,21 @@ func (s *sugar) Title(title string) Sugar {
 // returns true if any of the tests failed
 func (s *sugar) isFailed() bool {
 	return s.t.Failed()
+}
+
+// recovers from panics and logs the panic
+func recoverFromPanic(isPassed Test, log Log) chan bool {
+	isPassedChannel := make(chan bool)
+	go func() {
+		defer func() {
+			err := recover()
+			if err != nil {
+				log(err)
+				log(string(debug.Stack()))
+				isPassedChannel <- false
+			}
+		}()
+		isPassedChannel <- isPassed(log)
+	}()
+	return isPassedChannel
 }
