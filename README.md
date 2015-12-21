@@ -4,7 +4,7 @@
 [![GoDoc](https://godoc.org/github.com/golang/gddo?status.svg)](http://godoc.org/github.com/marksalpeter/sugar)
 [![Gitter](https://badges.gitter.im/marksalpeter/sugar.svg)](https://gitter.im/marksalpeter/sugar?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
-Sugar is meant to simplify test output and and better organize test in syntax in go. For full documentation see the godoc link below.
+Sugar is meant to simplify test output and and better organize test funcs. For full documentation see the godoc. If you've got any questions, check the gitter or tweet @marksalpeter. 
 
 # Why do I need this?
 With sugar, your test output will look sexy, like this ;) :
