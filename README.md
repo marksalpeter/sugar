@@ -3,6 +3,8 @@ Sugar is meant to simplify test output and and better organize test in syntax in
 [![GoDoc](https://godoc.org/github.com/golang/gddo?status.svg)](http://godoc.org/github.com/marksalpeter/sugar)
 
 ### Why do I need this?
+
+[![Join the chat at https://gitter.im/marksalpeter/sugar](https://badges.gitter.im/marksalpeter/sugar.svg)](https://gitter.im/marksalpeter/sugar?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 With sugar, your test output will look sexy, like this ;) :
 ![terminal](terminal.png?raw=true)
 
