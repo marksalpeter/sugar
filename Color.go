@@ -1,18 +1,18 @@
 package sugar
 
 import (
-	"github.com/mgutz/ansi"
 	"fmt"
+	"github.com/mgutz/ansi"
 )
 
 var (
-	green = ansi.ColorCode("green")
-	yellow = ansi.ColorCode("yellow")
-	red = ansi.ColorCode("red")
-	cyan = ansi.ColorCode("cyan")
-	gray= ansi.LightBlack
+	green         = ansi.ColorCode("green")
+	yellow        = ansi.ColorCode("yellow")
+	red           = ansi.ColorCode("red")
+	cyan          = ansi.ColorCode("cyan")
+	gray          = ansi.LightBlack
 	grayUnderline = ansi.ColorCode("180+u")
-	reset = ansi.ColorCode("reset")
+	reset         = ansi.ColorCode("reset")
 )
 
 func greenColor(input interface{}) string {
