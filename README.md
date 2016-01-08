@@ -1,9 +1,14 @@
-Sugar is meant to simplify test output and and better organize test in syntax in go. For full documentation see the godoc link below.
-[![GoDoc](https://godoc.org/github.com/golang/gddo?status.svg)](http://godoc.org/github.com/golang/gddo)
 
-### Why do I need this?
+# Sugar -  Better Testing for Go
+
+[![GoDoc](https://godoc.org/github.com/golang/gddo?status.svg)](http://godoc.org/github.com/marksalpeter/sugar)
+[![Gitter](https://badges.gitter.im/marksalpeter/sugar.svg)](https://gitter.im/marksalpeter/sugar?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
+
+Sugar is a simple wrapper around `testing.T` that clarifies and colorizes test output and and better organizes test funcs. For full documentation see the godoc. If you've got any questions, check the gitter or tweet @marksalpeter. 
+
+# Why do I need this?
 With sugar, your test output will look sexy, like this ;) :
-[![terminal](https://github.com/marksalpeter/sugar/terminal.png)]
+![terminal](terminal.png?raw=true)
 
 and test code will be organized more clearly like this:
 ```go
