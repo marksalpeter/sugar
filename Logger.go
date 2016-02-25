@@ -100,7 +100,7 @@ func (l *logger) Compare(a, b interface{}) bool {
 		// see if there is anything we expect that isn't in the structValues
 		for i, len := 0, aValue.Len(); i < len; i++ {
 			nestedLogger := NewLogger()
-			if !l.Compare(aValue.Index(i).Interface(), bValue.Index(i).Interface()) {
+			if !nestedLogger.Compare(aValue.Index(i).Interface(), bValue.Index(i).Interface()) {
 				l.Log("%s failed at index %d", aValue.Type(), i)
 				l.Log(nestedLogger)
 				return false
@@ -124,7 +124,7 @@ func (l *logger) Compare(a, b interface{}) bool {
 			bField := bValue.Type().Field(i)
 			bFieldValue := bValue.FieldByName(bField.Name)
 			nestedLogger := NewLogger()
-			if !l.Compare(aFieldValue.Interface(), bFieldValue.Interface()) {
+			if !nestedLogger.Compare(aFieldValue.Interface(), bFieldValue.Interface()) {
 				l.Log("%s.%s", aValue.Type(), aField.Name)
 				l.Log(nestedLogger)
 				return false
@@ -142,8 +142,9 @@ func (l *logger) Compare(a, b interface{}) bool {
 func (l *logger) String() string {
 	var result string
 	for i, s := 0, len(l.stack); i < s; i++ {
+		isLastLog := i == s-1
 		var tag string
-		if i == s-1 {
+		if isLastLog {
 			tag = "┖"
 		} else {
 			tag = "┠"
@@ -158,11 +159,33 @@ func (l *logger) String() string {
 				}
 			}
 		} else {
-			result += fmt.Sprintf(" %s %+s %s \n",
-				yellowColor(tag),
-				yellowColor(l.stack[i]),
-				grayColor(fmt.Sprintf("[line:%d]", l.lines[i])),
-			)
+			// break up multi line logs so that we can left-align each row of text underneath the previous row of text
+			logLines := strings.Split(fmt.Sprintf("%+v", l.stack[i]), "\n")
+			for j, logLine := range logLines {
+				logLine = strings.TrimSpace(logLine)
+				isFirstLogLine := j == 0
+				if isFirstLogLine {
+					// print the first line of a multiline log with its `tag` in front and its `[line:#]` at the end
+					result += fmt.Sprintf(" %s %s %s \n",
+						yellowColor(tag),
+						yellowColor(logLine),
+						grayColor(fmt.Sprintf("[line:%d]", l.lines[i])),
+					)
+				} else if isLastLog {
+					// add an indent to every log line after the first line
+					result += fmt.Sprintf(" %s %+s \n",
+						" ",
+						yellowColor(logLine),
+					)
+				} else {
+					// add a pipe to every log line after the first line
+					result += fmt.Sprintf(" %s %+s \n",
+						yellowColor("┃"),
+						yellowColor(logLine),
+					)
+				}
+			}
+
 		}
 	}
 	return result
