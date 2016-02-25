@@ -6,10 +6,6 @@ import (
 	"testing"
 )
 
-type Struct struct {
-	Field string
-}
-
 func Example() {
 
 	// be sure to use the *testing.T you get from the `Test(t *testing.T)` func
