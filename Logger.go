@@ -33,8 +33,8 @@ type Logger interface {
 	//  ┖  ┖ finally, its possible to nest logs by createing a new logger
 	Log(s interface{}, args ...interface{})
 
-	// Compare compares interface `b` against interface `a` and logs all of the differences
-	Compare(a, b interface{}) bool
+	// // Compare compares interface `b` against interface `a` and logs all of the differences
+	// Compare(a, b interface{}) bool
 
 	// Prints the log
 	String() string
@@ -75,7 +75,7 @@ func (l *logger) Log(s interface{}, args ...interface{}) {
 
 // Compare performs a deep reflection over two interfaces and logs any differences that it finds. It returns true if the two
 // interfaces match eachother.
-func (l *logger) Compare(a, b interface{}) bool {
+func (log Log) Compare(a, b interface{}) bool {
 
 	aValue := reflect.ValueOf(a)
 	bValue := reflect.ValueOf(b)
@@ -83,26 +83,26 @@ func (l *logger) Compare(a, b interface{}) bool {
 	if aValue.Kind() == reflect.Ptr {
 		// a and b point to non nil values
 		if aValue.Elem().IsValid() && bValue.Elem().IsValid() {
-			return l.Compare(aValue.Elem().Interface(), bValue.Elem().Interface())
+			return log.Compare(aValue.Elem().Interface(), bValue.Elem().Interface())
 		}
 		// a and b are either both nil and they are the same pointer type
 		return aValue.Elem().IsValid() == bValue.Elem().IsValid() && a == b
 	} else if aValue.Kind() == reflect.Slice {
 		// fail if there are different amounts of items in the slices
 		if aValue.Len() != bValue.Len() {
-			l.Log("%s", aValue.Type())
+			log("%s", aValue.Type())
 			nestedLogger := NewLogger()
 			nestedLogger.Log("expected: %d", aValue.Len())
 			nestedLogger.Log("found   : %d", bValue.Len())
-			l.Log(nestedLogger)
+			log(nestedLogger)
 			return false
 		}
 		// see if there is anything we expect that isn't in the structValues
 		for i, len := 0, aValue.Len(); i < len; i++ {
 			nestedLogger := NewLogger()
-			if !nestedLogger.Compare(aValue.Index(i).Interface(), bValue.Index(i).Interface()) {
-				l.Log("%s[] failed at index %d", aValue.Type(), i)
-				l.Log(nestedLogger)
+			if !Log(nestedLogger.Log).Compare(aValue.Index(i).Interface(), bValue.Index(i).Interface()) {
+				log("%s failed at index %d", aValue.Type(), i)
+				log(nestedLogger)
 				return false
 			}
 		}
@@ -111,8 +111,8 @@ func (l *logger) Compare(a, b interface{}) bool {
 		bTime, _ := bValue.Interface().(time.Time)
 		// compare times to the nearest second
 		if time.Duration(math.Abs(float64(aTime.Sub(bTime)))) > time.Second {
-			l.Log("expected: %v.(%s)", aTime, aValue.Type())
-			l.Log("found   : %v.(%s)", bTime, bValue.Type())
+			log("expected: %v.(%s)", aTime, aValue.Type())
+			log("found   : %v.(%s)", bTime, bValue.Type())
 			return false
 		}
 		return true
@@ -124,16 +124,16 @@ func (l *logger) Compare(a, b interface{}) bool {
 			bField := bValue.Type().Field(i)
 			bFieldValue := bValue.FieldByName(bField.Name)
 			nestedLogger := NewLogger()
-			if !nestedLogger.Compare(aFieldValue.Interface(), bFieldValue.Interface()) {
-				l.Log("%s.%s", aValue.Type(), aField.Name)
-				l.Log(nestedLogger)
+			if !Log(nestedLogger.Log).Compare(aFieldValue.Interface(), bFieldValue.Interface()) {
+				log("%s.%s", aValue.Type(), aField.Name)
+				log(nestedLogger)
 				return false
 			}
 		}
 		return true
 	} else if a != b {
-		l.Log("expected: %v.(%s)", a, aValue.Type())
-		l.Log("found   : %v.(%s)", b, bValue.Type())
+		log("expected: %v.(%s)", a, aValue.Type())
+		log("found   : %v.(%s)", b, bValue.Type())
 		return false
 	}
 	return true
