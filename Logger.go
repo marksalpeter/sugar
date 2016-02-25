@@ -34,7 +34,7 @@ type Logger interface {
 	Log(s interface{}, args ...interface{})
 
 	// // Compare compares interface `b` against interface `a` and logs all of the differences
-	// Compare(a, b interface{}) bool
+	Compare(a, b interface{}) bool
 
 	// Prints the log
 	String() string
@@ -71,6 +71,12 @@ func (l *logger) Log(s interface{}, args ...interface{}) {
 		l.stack = append(l.stack, s)
 		l.lines = append(l.lines, line)
 	}
+}
+
+// Compare performs a deep reflection over two interfaces and logs any differences that it finds. It returns true if the two
+// interfaces match eachother.
+func (l *logger) Compare(a, b interface{}) bool {
+	return Log(l.Log).Compare(a, b)
 }
 
 // Compare performs a deep reflection over two interfaces and logs any differences that it finds. It returns true if the two
