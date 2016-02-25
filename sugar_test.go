@@ -36,9 +36,15 @@ func TestStruct(t *testing.T) {
 		nestedLogger.Log("it is also possible to nest logs by creating a new logger")
 		log(nestedLogger)
 
-		log("and for the grand finally, interface comparisons are built in to the logger as well")
+		log("finally, interface comparisons are built in to the logger as well")
 		nestedLogger = sugar.NewLogger()
-		if !nestedLogger.Compare(&Struct{Field: "this field does not"}, &Struct{Field: "equal this one"}) {
+		if !nestedLogger.Compare([]Struct{
+			Struct{Field: "this equals the other one"},
+			Struct{Field: "this field does not"},
+		}, []Struct{
+			Struct{Field: "this equals the other one"},
+			Struct{Field: "equal this one"},
+		}) {
 			log(nestedLogger)
 		}
 

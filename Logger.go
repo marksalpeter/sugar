@@ -101,7 +101,7 @@ func (l *logger) Compare(a, b interface{}) bool {
 		for i, len := 0, aValue.Len(); i < len; i++ {
 			nestedLogger := NewLogger()
 			if !nestedLogger.Compare(aValue.Index(i).Interface(), bValue.Index(i).Interface()) {
-				l.Log("%s failed at index %d", aValue.Type(), i)
+				l.Log("%s[] failed at index %d", aValue.Type(), i)
 				l.Log(nestedLogger)
 				return false
 			}
