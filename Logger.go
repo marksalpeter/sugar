@@ -87,6 +87,13 @@ func (log Log) Compare(a, b interface{}) bool {
 	bValue := reflect.ValueOf(b)
 
 	if aValue.Kind() == reflect.Ptr {
+		// a and b
+		if bValue.Kind() != reflect.Ptr {
+			log("expected: %+v", aValue.Interface())
+			log("found   : %+v", bValue.Interface())
+			return false
+		}
+
 		// a and b point to non nil values
 		if aValue.Elem().IsValid() && bValue.Elem().IsValid() {
 			return log.Compare(aValue.Elem().Interface(), bValue.Elem().Interface())
