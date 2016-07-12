@@ -34,7 +34,7 @@ type Logger interface {
 	Log(s interface{}, args ...interface{})
 
 	// // Compare compares interface `b` against interface `a` and logs all of the differences
-	Compare(a, b interface{}) bool
+	Compare(a, b interface{}, omitEmpty ...bool) bool
 
 	// Prints the log
 	String() string
@@ -75,19 +75,24 @@ func (l *logger) Log(s interface{}, args ...interface{}) {
 
 // Compare performs a deep reflection over two interfaces and logs any differences that it finds. It returns true if the two
 // interfaces match eachother.
-func (l *logger) Compare(a, b interface{}) bool {
-	return Log(l.Log).Compare(a, b)
+func (l *logger) Compare(a, b interface{}, omitEmpty ...bool) bool {
+	return Log(l.Log).Compare(a, b, omitEmpty...)
 }
 
 // Compare performs a deep reflection over two interfaces and logs any differences that it finds. It returns true if the two
 // interfaces match eachother.
-func (log Log) Compare(a, b interface{}) bool {
+func (log Log) Compare(a, b interface{}, omitEmpty ...bool) bool {
 
 	aValue := reflect.ValueOf(a)
 	bValue := reflect.ValueOf(b)
 
+	var isOmit bool
+	if len(omitEmpty) > 0 {
+		isOmit = omitEmpty[0]
+	}
+
 	if aValue.Kind() == reflect.Ptr {
-		// a and b
+		// a and b are not both pointers
 		if bValue.Kind() != reflect.Ptr {
 			log("expected: %+v", aValue.Interface())
 			log("found   : %+v", bValue.Interface())
@@ -96,10 +101,12 @@ func (log Log) Compare(a, b interface{}) bool {
 
 		// a and b point to non nil values
 		if aValue.Elem().IsValid() && bValue.Elem().IsValid() {
-			return log.Compare(aValue.Elem().Interface(), bValue.Elem().Interface())
+			return log.Compare(aValue.Elem().Interface(), bValue.Elem().Interface(), omitEmpty...)
 		}
+
 		// a and b are either both nil and they are the same pointer type
 		return aValue.Elem().IsValid() == bValue.Elem().IsValid() && a == b
+
 	} else if aValue.Kind() == reflect.Slice {
 		// fail if there are different amounts of items in the slices
 		if aValue.Len() != bValue.Len() {
@@ -111,9 +118,9 @@ func (log Log) Compare(a, b interface{}) bool {
 			return false
 		}
 		// see if there is anything we expect that isn't in the structValues
-		for i, len := 0, aValue.Len(); i < len; i++ {
+		for i, l := 0, aValue.Len(); i < l; i++ {
 			nestedLogger := NewLogger()
-			if !Log(nestedLogger.Log).Compare(aValue.Index(i).Interface(), bValue.Index(i).Interface()) {
+			if !Log(nestedLogger.Log).Compare(aValue.Index(i).Interface(), bValue.Index(i).Interface(), omitEmpty...) {
 				log("%s failed at index %d", aValue.Type(), i)
 				log(nestedLogger)
 				return false
@@ -131,11 +138,19 @@ func (log Log) Compare(a, b interface{}) bool {
 		return true
 	} else if aValue.Kind() == reflect.Struct {
 		// iterate over all of the field
-		for i, len := 0, aValue.NumField(); i < len; i++ {
+		for i, l := 0, aValue.NumField(); i < l; i++ {
 			aField := aValue.Type().Field(i)
 			aFieldValue := aValue.FieldByName(aField.Name)
 			bField := bValue.Type().Field(i)
 			bFieldValue := bValue.FieldByName(bField.Name)
+
+			// skip fields if they are omited from the json
+			if isOmit {
+				if jsonTag := aField.Tag.Get("json"); len(jsonTag) > 0 && jsonTag[0] == '-' {
+					continue
+				}
+			}
+
 			nestedLogger := NewLogger()
 			if !Log(nestedLogger.Log).Compare(aFieldValue.Interface(), bFieldValue.Interface()) {
 				log("%s.%s", aValue.Type(), aField.Name)
