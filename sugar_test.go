@@ -5,8 +5,15 @@ import (
 	"testing"
 )
 
+type SubStruct struct {
+	ID uint
+	Is bool
+}
+
 type Struct struct {
-	Field string
+	Field      string
+	SubStructs []SubStruct
+	*SubStruct
 }
 
 func TestStruct(t *testing.T) {
@@ -45,6 +52,36 @@ func TestStruct(t *testing.T) {
 			Struct{Field: "equal this one"},
 		})
 
+	})
+
+}
+
+func TestCopy(t *testing.T) {
+
+	s := sugar.New(t)
+	var a Struct
+
+	s.Must("set up test struct", func(log sugar.Log) bool {
+		a.Field = "field"
+		a.SubStructs = []SubStruct{{
+			ID: 1,
+		}, {
+			ID: 2,
+		}}
+		a.SubStruct = &SubStruct{
+			ID: 3,
+			Is: true,
+		}
+		return true
+	})
+
+	s.Assert("copy copies slices, allocates and copies pointers to structs, and copies ints, bools, and strings", func(log sugar.Log) bool {
+		var b Struct
+		if err := sugar.Copy(&a, &b); err != nil {
+			log(err)
+			return false
+		}
+		return log.Compare(a, b)
 	})
 
 }
